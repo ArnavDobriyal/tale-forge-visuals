@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -96,7 +95,7 @@ const StoryDisplay = ({ storyData, onNewStory }: StoryDisplayProps) => {
       <div className="animate-page-turn">
         <Card className="p-6 md:p-8 bg-story-light paper-texture book-shadow border-story-accent">
           <div className="flex flex-col md:flex-row gap-8">
-            <div className="md:w-1/2 order-2 md:order-1">
+            <div className="md:w-1/2">
               <div className="story-text text-lg">
                 {storySegments[currentSegment]?.text.split("\n").map((paragraph, idx) => (
                   <p key={idx} className="mb-4">
@@ -106,7 +105,7 @@ const StoryDisplay = ({ storyData, onNewStory }: StoryDisplayProps) => {
               </div>
             </div>
             
-            <div className="md:w-1/2 order-1 md:order-2">
+            <div className="md:w-1/2">
               <img
                 src={storySegments[currentSegment]?.imageUrl}
                 alt="Story illustration"
