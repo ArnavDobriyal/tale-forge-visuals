@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft, BookOpen, Sparkles, Wand2 } from "lucide-react";
 import { StoryFormData } from "./StoryForm";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface StoryDisplayProps {
   storyData: StoryFormData;
@@ -19,51 +21,81 @@ const StoryDisplay = ({ storyData, onNewStory }: StoryDisplayProps) => {
   const [storySegments, setStorySegments] = useState<StorySegment[]>([]);
   const [currentSegment, setCurrentSegment] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingPhase, setLoadingPhase] = useState("Brewing the story magic...");
 
-  // Mock image URLs (in a real app, these would come from an API)
-  const mockImages = [
-    "https://images.unsplash.com/photo-1472396961693-142e6e269027",
-    "https://images.unsplash.com/photo-1466721591366-2d5fba72006d", 
-    "https://images.unsplash.com/photo-1493962853295-0fd70327578a"
+  const loadingMessages = [
+    "Brewing the story magic...",
+    "Summoning the characters...",
+    "Painting the world...",
+    "Adding plot twists...",
+    "Crafting the finale...",
+    "Almost ready to begin your adventure..."
   ];
 
   // In a real app, this would call an API to generate story content
   useEffect(() => {
-    const generateMockStory = () => {
+    const generateStory = async () => {
       setLoading(true);
+      setLoadingProgress(0);
+      setLoadingPhase(loadingMessages[0]);
       
-      // Generate content based on form type
-      let storyText: string;
-      if (storyData.type === "start" && storyData.storyStart) {
-        storyText = storyData.storyStart;
-      } else {
-        storyText = `Once upon a time in a ${storyData.imageStyle} world, an adventure began based on the theme: ${storyData.theme}`;
+      // Simulate loading progress with random messages
+      const interval = setInterval(() => {
+        setLoadingProgress(prev => {
+          const newProgress = Math.min(prev + Math.random() * 15, 95);
+          const messageIndex = Math.floor((newProgress / 100) * loadingMessages.length);
+          setLoadingPhase(loadingMessages[Math.min(messageIndex, loadingMessages.length - 1)]);
+          return newProgress;
+        });
+      }, 800);
+
+      try {
+        // Call the Python server
+        const response = await fetch('http://localhost:5000/generate-story', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(storyData),
+        });
+        
+        const data = await response.json();
+        clearInterval(interval);
+        setLoadingProgress(100);
+        setTimeout(() => {
+          setStorySegments(data.segments);
+          setLoading(false);
+        }, 500);
+      } catch (error) {
+        console.error("Error fetching story:", error);
+        clearInterval(interval);
+        
+        // Fallback to mock data if server is not running
+        const mockSegments: StorySegment[] = [
+          {
+            text: `Once upon a time in a ${storyData.imageStyle} world, an adventure began based on the theme: ${storyData.theme || storyData.storyStart}\n\nThe journey was just beginning, and nobody knew what adventures awaited beyond the horizon.`,
+            imageUrl: "https://images.unsplash.com/photo-1472396961693-142e6e269027",
+          },
+          {
+            text: "As they ventured deeper into the mysterious lands, strange creatures and unexpected allies appeared. The landscape shifted from familiar terrain to breathtaking views.",
+            imageUrl: "https://images.unsplash.com/photo-1466721591366-2d5fba72006d",
+          },
+          {
+            text: "Finally, after overcoming numerous obstacles and facing their deepest fears, they discovered the truth that had been hidden all along.",
+            imageUrl: "https://images.unsplash.com/photo-1493962853295-0fd70327578a",
+          },
+        ];
+        
+        setLoadingProgress(100);
+        setTimeout(() => {
+          setStorySegments(mockSegments);
+          setLoading(false);
+        }, 500);
       }
-      
-      // Create mock story segments
-      const segments: StorySegment[] = [
-        {
-          text: `${storyText}\n\nThe journey was just beginning, and nobody knew what adventures awaited beyond the horizon. The air was filled with anticipation as our protagonist took their first steps into the unknown.`,
-          imageUrl: mockImages[0],
-        },
-        {
-          text: "As they ventured deeper into the mysterious lands, strange creatures and unexpected allies appeared. The landscape shifted from familiar terrain to breathtaking views that seemed to defy reality itself.",
-          imageUrl: mockImages[1],
-        },
-        {
-          text: "Finally, after overcoming numerous obstacles and facing their deepest fears, they discovered the truth that had been hidden all along. The world would never be the same, and neither would they.",
-          imageUrl: mockImages[2],
-        },
-      ];
-      
-      // Simulate API delay
-      setTimeout(() => {
-        setStorySegments(segments);
-        setLoading(false);
-      }, 1500);
     };
 
-    generateMockStory();
+    generateStory();
   }, [storyData]);
 
   const handleNext = () => {
@@ -80,9 +112,49 @@ const StoryDisplay = ({ storyData, onNewStory }: StoryDisplayProps) => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-96">
-        <div className="text-story-primary text-xl mb-4">Creating your story...</div>
-        <div className="w-12 h-12 border-4 border-story-accent border-t-story-primary rounded-full animate-spin"></div>
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <div className="mb-8 text-center">
+          <h2 className="text-3xl font-serif text-center text-story-dark font-bold mb-6">
+            {storyData.title}
+          </h2>
+          <div className="relative w-32 h-32 mx-auto mb-6">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <BookOpen className="w-12 h-12 text-story-primary animate-pulse" />
+            </div>
+            <div className="absolute inset-0 animate-spin duration-5000" style={{ animationDuration: '5s' }}>
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4">
+                <Sparkles className="w-6 h-6 text-story-secondary" />
+              </div>
+              <div className="absolute top-1/2 right-0 -translate-y-1/2 w-4 h-4">
+                <Wand2 className="w-6 h-6 text-story-accent" />
+              </div>
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-4">
+                <Sparkles className="w-6 h-6 text-story-secondary" />
+              </div>
+              <div className="absolute top-1/2 left-0 -translate-y-1/2 w-4 h-4">
+                <Wand2 className="w-6 h-6 text-story-accent" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="text-story-primary text-xl mb-4">{loadingPhase}</div>
+          
+          <div className="max-w-md mx-auto">
+            <Progress value={loadingProgress} className="h-2 bg-story-accent/30" />
+            <div className="text-right text-sm text-story-secondary mt-1">{Math.round(loadingProgress)}%</div>
+          </div>
+
+          <div className="mt-8">
+            <Card className="p-6 md:p-8 bg-story-light paper-texture book-shadow border-story-accent max-w-md mx-auto">
+              <div className="space-y-4">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
