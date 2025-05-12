@@ -96,16 +96,25 @@ export default {
 				'page-turn': {
 					'0%': { transform: 'rotateY(0deg)', opacity: '0' },
 					'100%': { transform: 'rotateY(180deg)', opacity: '1' }
+				},
+				'page-flip': {
+					'0%': { transform: 'translateX(0) rotateY(0deg)', opacity: '1' },
+					'50%': { transform: 'translateX(10%) rotateY(10deg)', opacity: '0.5' },
+					'100%': { transform: 'translateX(0) rotateY(0deg)', opacity: '1' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'page-turn': 'page-turn 0.5s ease-out forwards'
+				'page-turn': 'page-turn 0.5s ease-out forwards',
+				'page-flip': 'page-flip 0.5s ease-out'
 			},
 			fontFamily: {
 				serif: ['Merriweather', 'Georgia', 'serif'],
 				sans: ['Inter', 'sans-serif']
+			},
+			perspective: {
+				'1000': '1000px',
 			}
 		}
 	},

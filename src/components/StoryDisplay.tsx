@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,6 +22,8 @@ const StoryDisplay = ({ storyData, onNewStory }: StoryDisplayProps) => {
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingPhase, setLoadingPhase] = useState("Brewing the story magic...");
+  const [pageTransition, setPageTransition] = useState(false);
+  const [direction, setDirection] = useState("next");
 
   const loadingMessages = [
     "Brewing the story magic...",
@@ -98,15 +99,25 @@ const StoryDisplay = ({ storyData, onNewStory }: StoryDisplayProps) => {
     generateStory();
   }, [storyData]);
 
+  const handlePageTransition = (nextIndex: number, dir: "next" | "prev") => {
+    setPageTransition(true);
+    setDirection(dir);
+    
+    setTimeout(() => {
+      setCurrentSegment(nextIndex);
+      setPageTransition(false);
+    }, 300);
+  };
+
   const handleNext = () => {
     if (currentSegment < storySegments.length - 1) {
-      setCurrentSegment(currentSegment + 1);
+      handlePageTransition(currentSegment + 1, "next");
     }
   };
 
   const handlePrevious = () => {
     if (currentSegment > 0) {
-      setCurrentSegment(currentSegment - 1);
+      handlePageTransition(currentSegment - 1, "prev");
     }
   };
 
@@ -165,28 +176,43 @@ const StoryDisplay = ({ storyData, onNewStory }: StoryDisplayProps) => {
         {storyData.title}
       </h2>
       
-      <div>
-        <Card className="p-6 md:p-8 bg-story-light paper-texture book-shadow border-story-accent">
-          <div className="flex flex-col md:flex-row gap-8">
-            <div className="md:w-1/2">
-              <div className="story-text text-lg normal-case">
-                {storySegments[currentSegment]?.text.split("\n").map((paragraph, idx) => (
-                  <p key={idx} className="mb-4">
-                    {paragraph}
-                  </p>
-                ))}
+      <div className="relative">
+        <Card className={`p-6 md:p-8 bg-story-light paper-texture book-shadow border-story-accent 
+          transition-all duration-300 transform 
+          ${pageTransition ? 
+            (direction === "next" ? "translate-x-[3%] opacity-0 scale-95" : "translate-x-[-3%] opacity-0 scale-95") : 
+            "translate-x-0 opacity-100 scale-100"}`}>
+          
+          <div className="flex flex-col md:flex-row gap-8 items-center">
+            <div className="md:w-1/2 md:order-1 order-2">
+              <div className="story-page-container perspective-1000 w-full">
+                <div className="story-text text-lg normal-case relative z-10 bg-[#fffdf9] p-6 rounded-lg shadow-md border-r-4 border-amber-800/20">
+                  {storySegments[currentSegment]?.text.split("\n").map((paragraph, idx) => (
+                    <p key={idx} className="mb-4">
+                      {paragraph}
+                    </p>
+                  ))}
+                  
+                  <div className="absolute bottom-2 right-2 text-amber-800/40 text-xs font-serif italic">
+                    Page {currentSegment + 1}
+                  </div>
+                </div>
               </div>
             </div>
             
-            <div className="md:w-1/2">
-              <img
-                src={storySegments[currentSegment]?.imageUrl}
-                alt="Story illustration"
-                className="rounded-md shadow-md w-full h-64 md:h-80 object-cover"
-              />
-              <p className="text-center mt-2 text-sm text-story-secondary italic">
-                Generated {storyData.imageStyle} style image
-              </p>
+            <div className="md:w-1/2 md:order-2 order-1 perspective-1000">
+              <div className="image-container relative transition-all duration-300">
+                <img
+                  src={storySegments[currentSegment]?.imageUrl}
+                  alt="Story illustration"
+                  className="rounded-md shadow-md w-full h-64 md:h-80 object-cover transform hover:scale-105 transition-all duration-300"
+                />
+                <div className="absolute inset-0 border-4 border-white/30 rounded-md pointer-events-none"></div>
+                
+                <p className="text-center mt-2 text-sm text-story-secondary italic">
+                  Generated {storyData.imageStyle} style image
+                </p>
+              </div>
             </div>
           </div>
           
@@ -196,14 +222,21 @@ const StoryDisplay = ({ storyData, onNewStory }: StoryDisplayProps) => {
                 variant="outline"
                 onClick={handlePrevious}
                 disabled={currentSegment === 0}
-                className="flex items-center"
+                className="flex items-center hover:bg-story-accent/20 transition-all"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" /> Previous
               </Button>
             </div>
             
-            <div className="text-sm text-story-secondary">
-              {currentSegment + 1} of {storySegments.length}
+            <div className="flex items-center space-x-2">
+              {storySegments.map((_, idx) => (
+                <div 
+                  key={idx} 
+                  className={`h-2 rounded-full transition-all ${
+                    idx === currentSegment ? "w-6 bg-story-primary" : "w-2 bg-story-accent"
+                  }`}
+                ></div>
+              ))}
             </div>
             
             <div>
@@ -211,19 +244,23 @@ const StoryDisplay = ({ storyData, onNewStory }: StoryDisplayProps) => {
                 variant="outline"
                 onClick={handleNext}
                 disabled={currentSegment === storySegments.length - 1}
-                className="flex items-center"
+                className="flex items-center hover:bg-story-accent/20 transition-all"
               >
                 Next <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
         </Card>
+        
+        {/* Page edge shadow decoration */}
+        <div className="absolute inset-y-0 right-0 w-2 bg-gradient-to-l from-amber-900/10 to-transparent"></div>
+        <div className="absolute inset-x-0 bottom-0 h-2 bg-gradient-to-t from-amber-900/10 to-transparent"></div>
       </div>
       
-      <div className="flex justify-center">
+      <div className="flex justify-center mt-10">
         <Button
           onClick={onNewStory}
-          className="bg-story-primary hover:bg-story-dark"
+          className="bg-story-primary hover:bg-story-dark transition-all px-6 py-2"
         >
           Create New Story
         </Button>
